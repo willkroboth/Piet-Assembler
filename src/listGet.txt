@@ -1,0 +1,80 @@
+include ./util/IO.txt;
+main{
+    # definition of listGet function;
+    # using compiler to make it easier to write;
+
+    pshOrder 9 Your  text;
+    IO.printChar;
+    IO.inputLine;
+    IO.reverseList;
+
+    pshOrder 11 First  char:;
+    IO.printChar;
+    # should be able to be combined into listGet 0;
+    psh 0;
+    rawListGet;
+
+    otC;
+    otC \n;
+
+    pshOrder 10 Which  char;
+    IO.printChar;
+    inN;
+    rawListGet;
+    otC;
+    otC \n;
+
+    IO.printChar;
+    otC \n;
+
+    end;
+}
+
+# listGet is a builtin function;
+# takes in index and list;
+# uses 0-based index to look at a list
+# index is mod length to keep value in bounds;
+rawListGet{
+    # input: rt i l list;
+
+    # Step 1: bury rt under parameters;
+    # rt i l list -> l rt i list -> l rt i l list -> 4+l rt i l list -> i l list rt;
+    rol 4 -1;
+    dup;
+    rol 5 1;
+
+    add 4;
+    psh 2;
+    rol;
+
+    # Step 2: make i%l;
+    # i l list -> i%l l list;
+    rol 2 1;
+    dup;
+    rol 3 1;
+    mod;
+
+    # Step 3: index list with i;
+    # i l list -> 3+i 3+i l list -> s s 3+i l lit -> 3+i s s l lit -> s l list;
+    add 3;
+    dup;
+
+    psh -1;
+    rol;
+    dup;
+
+    rol 3 -1;
+
+    psh 1;
+    rol;
+
+    # Step 4 retrieve return address and return;
+    # n l list rt -> l n l list rt -> rt n l list;
+    rol 2 1;
+    dup;
+    rol 3 1;
+
+    add 4;
+    psh -2;
+    rol;
+}

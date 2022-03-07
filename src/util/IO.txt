@@ -1,0 +1,164 @@
+# Functions to help with input/output of text;
+
+# main tests all methods by echoing message;
+main{
+    inputLine;
+    reverseList;
+    printChar;
+    end;
+}
+
+# inputLine takes in characters until it reaches a \n character (10);
+# outputs a list of the characters it has read;
+inputLine{
+    # start counter at 0;
+    psh 0;
+
+    :loop start;
+
+    # increment counter;
+    add 1;
+
+    # input character;
+    inC;
+    dup;
+
+    # Roll character under counter, but keep copy on top to compare;
+    # aac -> aca;
+    rol 3 1;
+
+    # if character is not newline (10), loop;
+    jump not 10 loop start;
+
+    # cleanup by printing a newline after all the input ? ? ?;
+    otC \n;
+
+    # get return address from underneath newly created list;
+    # 6 abcdef rt -> rt 6abcdef;
+    dup;
+    add 3;
+    psh -2;
+    rol;
+}
+
+# reverseList inputs a list and outputs that list backwards;
+# usually used to reverse input to make correctly ordered output;
+reverseList{
+    # get list hidden under return address;
+    # rt 6abcdef -> 6 rt abcdef -> 96 rt abcdef -> rt 96 abcdef -> 9 rt 6abcdef-> 6abcdef rt;
+    rol 3 -1;
+    dup;
+    jump les 2 no work;
+    dup;
+    add 3;
+    rol 4 2;
+    rol 3 -1;
+
+    psh 2;
+    rol;
+
+    # duplicate list length as tracker for # chars to reverse;
+    # 66 abcdef;
+    dup;
+
+    # start loop;
+    :loop start;
+
+    # decrement duplicate of counter and place in front of list;
+    # 56 bcdefa -> 56 b 4 cdefa;
+    dup;
+    sub 1;
+    rol 4 1;
+
+    # reposition list length;
+    # 56 b 4 cdefa -> 5b 46 cdefa;
+    rol 2 1;
+    rol 4 1;
+
+    # roll next entry to appropriate depth
+    # 5b 46 cdefa -> 46 cdef ba;
+    add 2;
+    psh 1;
+    rol;
+
+    # loop if # chars to reverse != 1;
+    dup;
+
+    jump not 1 loop start;
+
+    # 1 6fedcba -> 6fedcba;
+    pop;
+
+    # get return address from underneath newly created list;
+    # 6 abcdef rt -> rt 6abcdef;
+    dup;
+    add 3;
+    psh -2;
+    rol;
+    jump return;
+    :no work;
+    rol 3 1;
+    :return;
+}
+
+# prints a character list out in the given order;
+printChar{
+    # get char list from under return address;
+    # rt n cc... -> n rt n cc... -> n cc... rt;
+    rol 3 -1;
+    dup;
+    jump les 1 no work;
+    dup;
+    rol 4 1;
+
+    add 3;
+    psh 2;
+    rol;
+
+    :output;
+    # get and print next char;
+    # (count) (char) (char)...;
+    rol 2 1;
+    otC;
+
+    # decrement counter and loop if not 0;
+    sub 1;
+    dup;
+    jump not 0 output;
+
+    :no work;
+    # pop old counter and return;
+    # 0 rt;
+    pop;
+}
+
+# prints a int list out in the given order;
+printInt{
+    # get char list from under return address;
+    # rt n cc... -> n rt n cc... -> n cc... rt;
+    rol 3 -1;
+    dup;
+    jump les 1 no work;
+    dup;
+    rol 4 1;
+
+    add 3;
+    psh 2;
+    rol;
+
+    :output;
+    # get and print next char;
+    # (count) (char) (char)...;
+    rol 2 1;
+    otN;
+
+    # decrement counter and loop if not 0;
+    sub 1;
+    dup;
+    jump not 0 output;
+
+    # pop old counter and return;
+    # 0 rt;
+    :no work;
+    pop;
+}

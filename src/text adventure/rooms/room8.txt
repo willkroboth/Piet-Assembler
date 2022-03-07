@@ -1,0 +1,150 @@
+include ../main.txt;
+include ../../util/IO.txt;
+
+main{
+    psh 0 0;
+    jump func: enter;
+}
+
+# Hallway room #2;
+
+enter{
+    pop;
+    pop;#don't care where came from;
+
+    pshOrder \length
+     You  are  in  a  room  with  a;
+    IO.printChar;
+
+    psh 8;# Item 8 = fire extinguished;
+    main.hasItem;
+    jump equ 1 no fire;
+        pshOrder \length
+          fireplace  that  is  filled  with  a  raging  fire.\n;
+        jump rejoin;
+    :no fire;
+        pshOrder \length
+         n  extinguished  fireplace.\n;
+    :rejoin;
+    IO.printChar;
+
+    psh 7;# Item 7 = picked up poker;
+    main.hasItem;
+    jump equ 1 no poker;
+        pshOrder \length
+         The  fire  poker  has  fallen  into  the  fireplace.\n;
+        IO.printChar;
+    :no poker;
+
+    jump func: handleActions;
+}
+
+handleActions{
+    pshOrder \length
+     Actions:\n
+     1.  Go  Back  to  the  Hallway\n;
+    IO.printChar;
+
+    # Check for the poker (item 7);
+    psh 7;
+    main.hasItem;
+    psh 1;# default 1 action;
+
+    rol 2 1;
+    jump equ 1 no poker;
+        pshOrder \length 2.  Reach  for  the  Fire  Poker\n;
+        IO.printChar;
+        add 1;
+    :no poker;
+
+    # check for the water bucket (item 5);
+    # (count) (depth);
+    rol 2 1;
+    add 1;
+
+    psh 8;# is the fire already out?;
+    main.hasItem;
+    jump equ 1 no water;
+
+    psh 5;
+    main.hasItem;
+    # (branch) (depth) (count);
+
+    jump equ 0 no water;
+        pshOrder \length 3.  Use  the  Water  Bucket\n;
+        IO.printChar;
+        rol 2 1;
+        add 1;
+        rol 2 1;
+    :no water;
+    # (depth) (count);
+    sub 1;
+    rol 2 1;
+
+    psh 8;
+    rol 2 1;
+    main.getAction;
+    dup;
+    jump equ 1 func: room6.enter;
+    dup;
+    jump equ 2 func: getPoker;
+    dup;
+    jump equ 3 func: useBucket;
+
+    end;
+}
+
+getPoker{
+    pop;
+    pop;
+
+    psh 8;# fire extinguished?;
+    main.hasItem;
+
+    jump equ 1 no fire;
+        pshOrder \length
+         You  reach  for  the  poker,  but  pull  back  from  the  heat  of  the  fire.\n;
+        jump rejoin;
+    :no fire;
+        psh 7;
+        main.addItem;
+        pshOrder \length
+         You  reach  into  the  extinguished  fireplace  and  pick  up  the  poker\n;
+    :rejoin;
+    IO.printChar;
+
+    pshOrder \length
+     Actions:\n
+     1.  Go  Back\n;
+    IO.printChar;
+
+    psh 8;
+    psh 1;
+    main.getAction;
+    dup;
+    jump equ 1 func: enter;
+    end;
+}
+
+useBucket{
+    pop;
+    pop;
+    pshOrder \length
+     You  dump  the  water  on  the  fire,  putting  it  out  and  cooling  down  the  fireplace.\n
+     Actions:\n
+     1.  Go  Back\n;
+    IO.printChar;
+
+    psh 5;
+    main.removeItem;
+
+    psh 8;
+    main.addItem;
+
+    psh 8;
+    psh 1;
+    main.getAction;
+    dup;
+    jump equ 1 func: enter;
+    end;
+}

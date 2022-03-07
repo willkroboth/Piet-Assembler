@@ -1,0 +1,138 @@
+include ../main.txt;
+include ../../util/IO.txt;
+include room4.txt;
+include room7.txt;
+include room8.txt;
+
+main{
+    psh 0 0;
+    jump func: enter;
+}
+# Guarded Hallway (6);
+enter{
+    pop;# don't care what action brought us here;
+
+    # (room) (depth) ...;
+    rol 2 1;
+    add 1;
+    psh 6;# is guard gone?;
+    main.hasItem;
+    jump not 1 func: guardNotGone;
+    jump func: guardGone;
+}
+
+guardNotGone{
+    # (depth) (room) ...;
+    pshOrder \length You  peek  around  a  corner  and  see  a  guard  in  front  of  a  door.\n;
+    IO.printChar;
+
+    psh 3;# has uniform?;
+    main.hasItem;
+    # (has uniform) (depth) (room);
+    jump equ 1 func: stayHere;
+
+    # have to leave;
+    rol 2 1;
+    pop;# don't care previous room;
+    sub 1;
+
+    pshOrder \length
+     Actions:\n
+     1.  Sneak  Back  to  Avoid  Being  Seen\n;
+    IO.printChar;
+
+    psh 6;
+    psh 1;
+    main.getAction;
+
+    dup;
+    jump equ 1 func: room4.enter;
+    end;
+}
+
+stayHere{
+    # (depth) (room) ...;
+    pshOrder \length
+     He  sees  your  uniform  and  assumes  you're  there  to  relieve  him.\n
+     He  walks  away,  leaving  you  alone  in  the  hallway.\n;
+    IO.printChar;
+
+    psh 6;# guard has left now;
+    main.addItem;
+    jump func: guardGone;
+}
+
+guardGone{
+    # (depth) (room) ...;
+    sub 1;
+    rol 2 1;
+
+    pshOrder \length
+     You  are  in  a  hallway.  It  goes  in  two  directions  and  there  is  a  door.\n
+     Actions:\n;
+    IO.printChar;
+
+    # change action names based on place entering from;
+    # room 8 = hallway room #2;
+    pshOrder 1 . 32;
+    otN;
+    otC;
+    otC;
+    dup;
+    jump equ 8 from room;
+        pshOrder \length Enter  the;
+        jump rejoin 1;
+    :from room;
+        pshOrder \length Return  to  the;
+    :rejoin 1;
+    IO.printChar;
+    pshOrder \length  Room.\n;
+    IO.printChar;
+
+    # room 4 = from left;
+    pshOrder 2 . 32;
+    otN;
+    otC;
+    otC;
+    dup;
+    jump equ 4 from left;
+        pshOrder Go;
+        otC;
+        otC;
+        jump rejoin 2;
+    :from left;
+        pshOrder \length Return;
+        IO.printChar;
+    :rejoin 2;
+    pshOrder \length  Left.\n;
+    IO.printChar;
+
+    # room 7 = from right;
+    pshOrder 3 . 32;
+    otN;
+    otC;
+    otC;
+    jump equ 7 from right;
+        pshOrder Go;
+        otC;
+        otC;
+        jump rejoin 3;
+    :from right;
+        pshOrder \length Return;
+        IO.printChar;
+    :rejoin 3;
+    pshOrder \length  Right.\n;
+    IO.printChar;
+
+    psh 6;
+    psh 3;
+    main.getAction;
+    dup;
+    jump equ 1 func: room8.enter;
+    dup;
+    jump equ 2 func: room4.enter;
+    dup;
+    jump equ 3 func: room7.enter;
+
+    end;
+}

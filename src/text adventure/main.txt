@@ -1,0 +1,217 @@
+include ../util/IO.txt;
+include ../util/memory.txt;
+include ./rooms/start.txt;
+
+main{
+    pshOrder 1 -1;# initialize memory;
+    pshOrder \length Starting  game:\n;
+    IO.printChar;
+
+    jump func: start.main;
+}
+
+# takes in a number of actions and returns the selected action, making sure it's valid;
+getAction{
+    # rt (number of actions);
+    rol 3 -1;
+
+    jump get input;
+    :print not valid;
+    # take previous input and state that it is not valid.;
+    otC ";
+    sub 1;
+    rol 2 1;
+    pop;
+    IO.reverseList;
+    IO.printChar;
+    otC ";
+
+    :not valid;
+    pshOrder \length  is  not  a  valid  input\n;
+    IO.printChar;
+
+    :get input;
+    pshOrder \length Choose  an  action;
+    IO.printChar;
+    IO.inputLine;
+
+    # (input) (upper) rt;
+
+    dup;
+    jump not 2 print not valid;
+    pop;
+    pop;
+    # 0 to 9 range from 48 to 57 in ASCII;
+    sub 48;
+    dup;
+    jump grt 0 positive;
+    jump out single char;
+    :positive;
+    # (input) (upper) rt;
+    dup;
+    rol 3 -1;
+    dup;
+    rol 4 1;
+    sub;
+    # (input-upper) (input) (upper) rt;
+    jump les 1 valid;
+
+    :out single char;
+    add 48;
+
+    psh ";
+    dup;
+    otC;
+    rol 2 1;
+    otC;
+    otC;
+    jump not valid;
+    :valid;
+    rol 4 1;
+    pop;
+    # rt (action chosen);
+    otC \n;
+}
+
+# adds given item id (an int) to memory if it isn't already added;
+addItem{
+    # rt (item) '(depth) ... ' (memory);
+
+    rol 3 -1;
+    dup;
+    rol 5 -1;
+    add 3;
+    rol 2 1;
+    # (item) '(depth) (item) rt ...' (memory);
+    hasItem;
+
+    # 0/1 '(depth) (item) rt ...' (memory);
+    jump equ 0 need to add;
+    sub 3;
+    rol 4 1;
+    pop;
+    # rt '(depth) ...' (memory);
+    return;
+
+    :need to add;
+    sub 1;
+    rol 2 1;
+    pshOrder 2 1;
+    # 2 1 (item) '(depth) rt ...' (memory);
+    memory.pshToMemory;
+    # '(depth) rt ...' 1 (item) (memory);
+    sub 2;
+    rol 3 1;
+    # rt (depth) ... (memory);
+}
+
+# checks for given item id in memory;
+# returns 1 if the item exists, 0 if not;
+hasItem{
+    # rt (id) '(depth) ...' memory -> rt 0/1 '(depth) ...' memory;
+    rol 3 -1;
+    rol 4 -1;
+    add 4;
+    psh 0;
+
+    :loop;
+    # '(counter) (depth) (id) rt ...' (memory);
+    dup;
+    rol 3 1;
+    pshOrder 2 1;
+    # 2 1 (counter) '(depth) (counter) (id) rt ...' (memory);
+    memory.pshToMemory;
+    # '(depth) (counter) (id) rt ...' 1 (counter) (memory);
+    memory.getDuplicateFromMemory;
+    # '(depth) (counter) (id) rt ...' 1 (next item) (memory);
+    memory.getFromMemory;
+    # 2 1 (next item) '(depth) (counter) (id) rt ...' (memory);
+    pop;
+    jump equ 0 not here;# if null (0) is received, should be end of memory;
+    rol 4 -1;
+    dup;
+    rol 5 1;
+    # (id) (next item) (depth) (counter) (id) ...;
+    sub;
+    jump equ 0 here;
+
+    # (depth) (counter) (id) ...;
+    rol 2 -1;
+    add 1;
+    # (counter+1) (depth) (id) ...;
+    jump loop;
+
+    :not here;
+    # '(depth) (counter) (id) rt ...' (memory);
+    sub 4;
+    rol 5 1;
+    pop;
+    pop;
+    psh 0;
+    rol 3 1;
+    # rt 0 '(depth) ...' (memory);
+    return;
+
+    :here;
+    # '(depth) (counter) (id) rt ...' (memory);
+    sub 4;
+    rol 5 1;
+    pop;
+    pop;
+    psh 1;
+    rol 3 1;
+    # rt 1 '(depth) ...' (memory);
+}
+
+removeItem{
+    # rt (id) '(depth) ...' memory -> rt 0/1 '(depth) ...' memory;
+    rol 3 -1;
+    rol 4 -1;
+    add 4;
+    psh 0;
+
+    :loop;
+    # '(counter) (depth) (id) rt ...' (memory);
+    dup;
+    rol 3 1;
+    pshOrder 2 1;
+    # 2 1 (counter) '(depth) (counter) (id) rt ...' (memory);
+    memory.pshToMemory;
+    # '(depth) (counter) (id) rt ...' 1 (counter) (memory);
+    memory.getDuplicateFromMemory;
+    # '(depth) (counter) (id) rt ...' 1 (next item) (memory);
+    memory.getFromMemory;
+    # 2 1 (next item) '(depth) (counter) (id) rt ...' (memory);
+    pop;
+    jump equ 0 done;# if null (0) is received, should be end of memory;
+    rol 4 -1;
+    dup;
+    rol 5 1;
+    # (id) (next item) (depth) (counter) (id) ...;
+    sub;
+    jump not 0 keep;
+        # (depth) (counter) (id) ...;
+        rol 2 1;
+        dup;
+        rol 3 1;
+        pshOrder 2 1;
+        # 2 1 (counter) '(depth) (counter) (id) rt ...' (memory);
+        memory.pshToMemory;
+        # '(depth) (counter) (id) rt ...' 1 (counter) (memory);
+        memory.deleteMemory;
+    :keep;
+
+    # (depth) (counter) (id) ...;
+    rol 2 -1;
+    add 1;
+    # (counter+1) (depth) (id) ...;
+    jump loop;
+
+    :done;
+    # '(depth) (counter) (id) rt ...' (memory);
+    sub 4;
+    rol 5 1;
+    pop;
+    pop;
+    # rt '(depth) ...' (memory);
+}

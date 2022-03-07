@@ -1,0 +1,83 @@
+include ../main.txt;
+include ../../util/IO.txt;
+include start.txt;
+include room5.txt;
+include room6.txt;
+
+main{
+    psh 0 0;
+    jump func: enter;
+}
+# Hallway outside the cell (4);
+enter{
+    pop;# don't care what choice brought you here;
+
+    pshOrder \length
+     You  are  in  the  hallway  outside  your  cell.  It  goes  in  two  directions.\n
+     Actions:\n;
+    IO.printChar;
+
+    # change action names based on place entering from;
+    # room 1 = cell;
+    pshOrder 1 . 32;
+    otN;
+    otC;
+    otC;
+    dup;
+    jump equ 1 from cell;
+        pshOrder \length Enter  the;
+        jump rejoin 1;
+    :from cell;
+        pshOrder \length Return  to  the;
+    :rejoin 1;
+    IO.printChar;
+    pshOrder \length  Cell.\n;
+    IO.printChar;
+
+    # room 5 = from left;
+    pshOrder 2 . 32;
+    otN;
+    otC;
+    otC;
+    dup;
+    jump equ 5 from left;
+        pshOrder Go;
+        otC;
+        otC;
+        jump rejoin 2;
+    :from left;
+        pshOrder \length Return;
+        IO.printChar;
+    :rejoin 2;
+    pshOrder \length  Left.\n;
+    IO.printChar;
+
+    # room 6 = from right;
+    pshOrder 3 . 32;
+    otN;
+    otC;
+    otC;
+    jump equ 6 from right;
+        pshOrder Go;
+        otC;
+        otC;
+        jump rejoin 3;
+    :from right;
+        pshOrder \length Return;
+        IO.printChar;
+    :rejoin 3;
+    pshOrder \length  Right.\n;
+    IO.printChar;
+
+    psh 4;
+    psh 3;
+    main.getAction;
+    dup;
+    jump equ 1 func: start.enter;
+    dup;
+    jump equ 2 func: room5.enter;
+    dup;
+    jump equ 3 func: room6.enter;
+
+    end;
+}

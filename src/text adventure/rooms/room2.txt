@@ -1,0 +1,55 @@
+include ../main.txt;
+include start.txt;
+include ../../util/IO.txt;
+
+main{
+    psh 0 0;
+    jump func: enter;
+}
+
+# Look outside your cell (start 1 - 1 i);
+enter{
+    pop;
+    pop;
+    pshOrder \length
+     You  look  outside  your  cell  and  see  the  keys  hanging  on  the  wall  just  beyond  your  reach.\n
+     Actions:\n
+     1.  Go  Back  to  the  Cell.\n;
+    IO.printChar;
+
+    # check for stick (item 1);
+    psh 1;
+    main.hasItem;
+    psh 2;# room 2;
+    psh 1;# default 1 action;
+
+    rol 3 -1;
+    jump equ 0 no stick;
+    pshOrder \length 2.  Reach  for  the  Keys  with  the  Stick\n;
+    IO.printChar;
+    add 1;
+    :no stick;
+
+    main.getAction;
+    dup;
+    jump equ 1 func: start.enter;
+    dup;
+    jump equ 2 func: openDoor;
+
+    end;
+}
+
+openDoor{
+    pop;
+    pop;
+    pshOrder \length
+     You  use  the  stick  to  grab  the  keys,  then  unlock  your  cell.\n;
+    IO.printChar;
+
+    # unlock door by adding item #2;
+    psh 2;
+    main.addItem;
+
+    pshOrder 2 2;
+    jump func: start.enter;
+}

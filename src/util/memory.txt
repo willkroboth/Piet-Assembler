@@ -1,0 +1,703 @@
+main{
+    # definition of memory-management functions;
+    # using compiler to make them easier to write;
+
+    # move around memory values for a more high-level object structure;
+    # Format in stack: (Data type) (data)(based)(on)(type);
+    # Built in data types:
+        -1 - end of stack
+            indicates when the current end of the stack is, should be moved forwards and the space filled with 0
+        0 - null
+            takes up space but no data, placeholder in memory
+            0
+        1 - integer
+            Basic part of Piet
+            1 (value)
+        2 - character
+            List of chars = string
+            2 (unicode value)
+        3 - list
+            3 (subtype) (length) (el)(em)(en)(ts)
+            subtypes same as data types, prefix not needed for each element
+            lists can contain lists
+
+        later:
+        4 - decimal
+            4 (integer part) (length) (decimal)(digits)
+            ex: pi ~= 4 3 9 1 4 1 5 9 2 6 5 3
+        5 - function reference
+            5 (function #)
+    ;
+
+    # Could allow for code to add new data types in the future;
+    # memory looks like: (datatype)(data) (datatype)(data) etc...;
+    end;
+}
+
+# Setup minimal values for memory;
+initializeMemory{
+    pshOrder 1 -1;
+
+    # retrieve return address;
+    psh 4;
+    psh -2;
+    rol;
+}
+
+# Setup test values for memory - 44 values long;
+setTestMemory{
+    # (index) (null) (int) (char) (int list) (char list) (list of int list) (list of char list) -1;
+    pshOrder
+     \length
+     1
+     0
+     1 100
+     2 \n
+     3 1 4 1 2 3 4
+     3 2 5 hello
+     3 3 2
+         1 2 1 2
+         1 2 3 4
+     3 3 2
+         2 2 a b
+         2 2 c d
+     -1;
+
+    # retrieve return address;
+    add 2;
+    psh -2;
+    rol;
+}
+
+# adds a new object to start of memory;
+pshToMemory{
+    # rt (length) (ob)(je)(ct) '(insert depth) ...' [memory];
+    # want: rt '(insert depth) ...' (ob)(je)(ct) [memory];
+
+    rol 3 -1;
+    dup;
+    add 3;
+    # (length+3) '(length) rt (ob)(je)(ct)' (insert depth);
+    rol 2 1;
+    rol 4 1;
+    # (length+3) 'rt (length) (ob)(je)(ct)' (insert depth);
+    psh 2;
+    rol;
+    # (length) '(ob)(je)(ct)' rt (insert depth);
+    dup;
+    add 4;
+    # (length+4) '(length) (ob)(je)(ct) rt (insert depth)';
+    psh -1;
+    rol;
+    dup;
+    # (insert depth) (insert depth) (length) (ob)(je)(ct) rt;
+    rol 3 -1;
+    dup;
+    rol 4 1;
+    # (length) (insert depth) (insert depth) (length) '(ob)(je)(ct)' rt;
+    add 5;
+    psh 1;
+    rol;
+
+    # (insert depth) (length) (ob)(je)(ct) rt (insert depth) ... [memory];
+    rol 2 1;
+    dup;
+    rol 3 -1;
+    add;
+    add 2;
+    rol 2 1;
+
+    # (length) (insert depth+length+2) '(ob)(je)(ct) rt (insert depth) ...' [memory];
+    rol;
+    # rol -> rt '(insert depth) ...' (ob)(je)(ct) [memory];
+}
+
+# rols first value in memory up to the top of the stack so it can be interacted with by the program;
+getFromMemory{
+    #inN;
+    #pop;
+    # Input: rt '(insert depth) ...' (object) [memory];
+    # Output: rt (length) (object) '(insert depth) ...' [memory];
+    rol 3 -1;
+    dup;
+    rol 4 1;
+    # (start) rt '(old) ...' (object) [memory];
+    add 4;
+    dup;
+    # '(end) (start) rt (old) ...' (object) [memory];
+    addNextLength;
+    # '(end) (start) rt (old) ... (object)' [memory];
+    dup;
+    rol 3 -1;
+    dup;
+    # (start) (start) (end) (end) ...;
+    rol 4 1;
+    sub;
+    # (length) '(end) (start) rt (old) ... (object)' [memory];
+
+    # goal: 2 (start+3) '(length) (length+3) -(length+2) (end+1) rt (length) (old) ...' (object) [memory];
+    # rol: -(length+2) (end+1) 'rt (length) (old) ... (length) (length+3) (object)' [memory];
+    # rol: (length) (length+3) '(object) rt (length)' (old) ... [memory];
+    # rol: rt (length) (object) (old) ... [memory];
+
+    # (length) (end) (start) rt (old) ... (objects) [memory];
+    dup;
+    rol 6 1;
+    # (length) (end) (start) rt (length) (old) ...;
+    rol 2 1;
+    add 1;
+    rol 3 1;
+    # (length) (start) (end+1) ...;
+    dup;
+    add 2;
+    dup;
+    add 1;
+    # (length+3) (length+2) (length) (start) (end+1) ...;
+    rol 4 1;
+    mul -1;
+    rol 4 1;
+    rol 2 1;
+    # (start) (length) (length+3) -(length+2) (end+1) ...;
+    add 3;
+    psh 2;
+
+    # 2 (start+3) '(length) (length+3) -(length+2) (end+1) rt (length) (old) ...' (object) [memory];
+    rol;
+    rol;
+    rol;
+    # rt (length) (object) (old) ... [memory];
+}
+
+# removes value at given index;
+deleteMemory{
+    # rt '(insert depth) ...' 1 (index) (memory);
+    # roll up insert depth + make it reach over rt then get 1;
+    rol 3 -1;
+    add 3;
+    dup;
+    psh -1;
+    rol;
+
+    # '1 (insert depth) rt ...' (index) (memory);
+    jump equ 1 continue;
+    # end early if invalid input;
+    end;
+    :continue;
+
+    # '(insert depth) ... (index)' (memory);
+    # get (index);
+    dup;
+    psh -1;
+    rol;
+
+    # '(index) (insert depth) ...' (memory);
+    # dup (insert depth) to get start;
+    rol 2 1;
+    dup;
+    rol 3 1;
+    add 1;
+
+    # '(start) (index) (insert depth) ...' (memory);
+    # addNextLength to (start) (index) times;
+    rol 2 1;
+    dup;
+    jump equ 0 0 index;
+    :add loop;
+    # '(index) (start) ... (mem)' (next item) (ory);
+    rol 2 1;
+    addNextLength;
+    rol 2 1;
+    # '(index) (start) ... (mem) (next item)' (ory);
+    sub 1;
+    dup;
+    jump not 0 add loop;
+    :0 index;
+    pop;
+    sub 1;
+
+    # '(start) (old) rt ... (mem)' (target item) (ory);
+    # get end to compute length;
+    dup;
+    add 1;
+    addNextLength;
+    # '(end) (start) (old) rt ... (mem) (target item)' (ory);
+    rol 2 1;
+    dup;
+    rol 3 1;
+    sub;
+    sub 1;
+    # (length) '(start) (old) rt ... (mem)' (target item) (ory);
+    rol 2 1;
+    add 2;
+    rol 2 1;
+    # '(length) (start) (old) rt ... (mem) (tar)'(get item) (ory);
+
+    # rol up each part of (target item) and pop (length) times;
+    :pop loop;
+    rol 2 1;
+    dup;
+    psh -1;
+    rol;
+    pop;
+    # '(start) (length) (old) rt ... (mem) (get)'( item) (ory);
+    rol 2 1;
+    sub 1;
+    dup;
+    jump not 0 pop loop;
+    pop;
+    pop;
+    # '(old) rt ... [extra]' (mem) [empty now] (ory);
+    sub 3;
+    rol 3 1;
+    # done;
+}
+
+# getDuplicateFromMemory places duplicate of element at given 0-based index at the top of stack;
+getDuplicateFromMemory{
+    # rt '(insert depth) ...' 1 (index) (memory);
+    # roll up insert depth + make it reach over rt then get 1;
+    rol 3 -1;
+    add 3;
+    dup;
+    psh -1;
+    rol;
+
+    # '1 (insert depth) rt ...' (index) (memory);
+    jump equ 1 continue;
+    # end early if invalid input;
+    end;
+    :continue;
+
+    # '(insert depth) ... (index)' (memory);
+    # get (index);
+    dup;
+    psh -1;
+    rol;
+
+    # '(index) (insert depth) ...' (memory);
+    # create 2 duplicates of (insert depth);
+    rol 2 1;
+    dup;
+    add 1;
+    dup;
+    add 1;
+
+    # '(start (focus)) (old 2) (old 1) (index) ...' (index #)...(of objects) (object to dup) ...;
+    # keep (old 1) so there is something to return at end;
+    # keep (old 2) for inserting location when duplicating;
+    # (start) needs to be modified to reach start of (object to dup);
+    # call addNextLength (index) times;
+    rol 4 -1;
+    dup;
+    jump equ 0 0 length;# make sure not already 0;
+
+    :element loop;
+    # '(index) (start) (insert) (old) ...' (object #1) ... (object #index) (object to dup) ...;
+    rol 2 1;
+    addNextLength;
+
+    # '(start) (index) (insert) (old) ... (object #1)' ... (object #index) (object to dup) ...;
+    rol 2 1;
+    sub 1;
+    dup;
+    jump not 0 element loop;# loop if index didn't run out;
+
+    :0 length;
+    # '0 (start) (insert) ... (object #index)' (object to dup) ...;
+    pop;
+    sub 1;
+    # '(start) (insert) ... (object #index)' (object to dup) ...;
+    # dup and add length of one more object to get end of (object to dup);
+    dup;
+    add 1;
+    addNextLength;
+
+    # Time to retrieve and duplicate object;
+    # end reach: '(end) (start) (insert) (old) ... [start of memory, target location] ... (object to dup)';
+    # start reach: (end) '(start) (insert) (old) ... [start of memory, target location] ...' (object to dup);
+    # insert reach: (end) (start) '(insert) (old) ...' [start of memory, target location] ... (object to dup);
+
+    # Plan: rol up and use loop to dup each item, then return to old and start location;
+    # (d)(a)(t)(a) ... [insert] ... [start] -> (a)(t)(a) ... [insert] (d) ... [start] (d) ...;
+    # -> (t)(a) ... [insert] (d)(a) ... [start] (d)(a) ... -> etc;
+    # need length of (d)(a)(t)(a) for loop counter;
+    # need [old] depth, automatically put to right place as move more data down;
+    # need [start] depth, increment each time;
+    # target stack: (insert) (start) (length) (d)(a)(t)(a) (old) rt ... [insert] ... [start];
+
+    # (length) = (end)-(start);
+    # rol 2 times from:;
+    # 3 (start + 3) '(insert+length) (start+length) (length) (-length-3) (end) (old) rt ... [insert] ... [start]' (d)(a)(t)(a);
+    # rol -> (-length-3) (end) '(old) rt ... [insert] ... [start] (insert+length) (start+length) (length) (d)(a)(t)(a)'
+    # rol -> (insert+length) (start+length) (length) (d)(a)(t)(a) (old) rt ... [insert] ... [start];
+
+    # (end) (start) (insert) -> 3 (start + 3) (start+length) (insert+length) (length) (-length-3) (end);
+    dup;
+    rol 4 1;
+    # (end) (start) (insert) (end)...;
+    rol 2 1;
+    dup;
+    rol 3 1;
+    sub;
+    sub 1;
+    # (length) (start) (insert) (end)...;
+    dup;
+    rol 4 1;
+    # (length) (start) (insert) (length) (end)...;
+    dup;
+    mul -1;
+    sub 3;
+    rol 5 1;
+    # (length) (start) (insert) (length) (-length-3) (end)...;
+    dup;
+    rol 4 -1;
+    add;
+    rol 3 1;
+    # (length) (start) (length+insert) (length) (-length-3) (end)...;
+    rol 2 1;
+    dup;
+    rol 3 1;
+    add;
+    # (start+length) (start) (length+insert) (length) (-length-3) (end)...;
+    rol 2 1;
+    add 3;
+    psh 3;
+    # 3 (start+3) (start+length) (length+insert) (length) (-length-3) (end)...;
+    # rol twice;
+    rol;
+    rol;
+    # (start+length) (insert+length) (length) (d)(a)(t)(a) (old) rt ... [insert] ... [start];
+
+    # fix insert values based on what I saw in terminal;
+    add 2;
+    rol 2 1;
+    add 1;
+    rol 2 1;
+
+    # loop (duplicate each element of (data), insert to two locations, update variables, length times);
+    rol 3 -1;
+    :dup loop;
+    # (length) (start) (insert) (next data) ... (previous)(data) [insert] ... (previous)(data) [start];
+    rol 4 -1;
+    dup;
+    # (n) (n) (length) (start) (insert) ... [insert] ... [start];
+    rol 4 -1;
+    dup;
+    add 1;
+    rol 5 1;
+    # (start) (n) (n) (length) (start) (insert) ... [insert] ... [start];
+    psh 1;
+    rol;
+    # (n) (length) (start) (insert) ... [insert] ... [start] (n);
+    rol 4 -1;
+    dup;
+    rol 5 1;
+    # (insert) (n) (length) (start) (insert + 2) ... [insert] ... [start] (n);
+    psh 1;
+    rol;
+    # (length) (start) (insert) (next data) ... [insert] (n) ... [start] (n);
+    sub 1;
+    dup;
+    jump not 0 dup loop;
+
+    # 0 (start) (insert) (old) rt ... (data) ... (data) ...;
+    pop;
+    pop;
+    pop;
+    sub 3;
+    rol 3 1;
+
+    # rt (old) ... (memory);
+}
+
+# insertToMemory inserts 2nd memory element at the index given by 1st memory element;
+insertToMemory{
+    # rt '(insert depth) ...' 1 (index) (datatype) (data) (memory);
+    rol 3 -1;
+    # reach over rt and 2 duplicate depths;
+    add 4;
+    # '(depth)=(depth)=(depth) rt ...' 1 (index) (datatype) (data) (memory);
+
+    dup;
+    dup;
+    # rol up 1 (index);
+    add 2;
+    dup;
+    psh -2;
+    rol;
+
+    # need old insert depth for finding data, will change (new insert depth) and (end insert depth);
+    # '1 (index) (new insert depth) (end insert depth) (old insert depth) rt  ...'  (datatype) (data) (memory);
+    jump equ 1 continue;
+    # program exits if given datatype is not integer;
+    end;
+    :continue;
+    # end early if (index) = 0;
+    dup;
+    jump equ 0 no change;
+
+    # don't need to reach over 1 now;
+    rol 2 1;
+    sub 1;
+    rol 2 1;
+
+    # index += 1;
+    add 1;
+
+    :index loop;
+    # repeat index times;
+    rol 2 1;
+    addNextLength;
+    rol 2 1;
+    sub 1;
+    dup;
+    jump not 0 index loop;
+    # pop 0 index;
+    pop;
+
+    # new reach: '(new insert depth) (end insert depth) (old insert depth) rt ... (datatype) (data) (mem) ... (ory)' (next object);
+    sub 3;
+
+    # set (end insert depth now);
+    rol 2 1;
+    # end reach: '(end insert depth) (new insert depth) (old insert depth) rt ...' (datatype)(data) (memory);
+    addNextLength;
+
+    # need to insert element into memory now;
+    # old reach: '(end insert depth) (new insert depth) (old insert depth) rt ...' (datatype) (data) (memory);
+    # end reach: '(end insert depth) (new insert depth) (old insert depth) rt ... (datatype) (data)' (memory);
+    # new reach: (end insert depth) (new insert depth) '(old insert depth) rt ... (datatype) (data) (mem)...(ory)' [target object location];
+    # Process:
+        (end) (new) (old) rt ... (datatype) (data) (mem)...(ory) [target object location]
+
+        get stack here: rol 3 times
+        2 (old+2) '(end-old)(new) (old-end-2) (end) (old) rt ...' (datatype) (data) (mem)...(ory)
+        rol -> (old-end-2) (end) '(old) rt ... (end-old)(new)(datatype)(data)' (mem)...(ory)
+        rol -> (end-old) (new) '(datatype) (data) (old) rt ... (mem)...(ory)'
+        rol -> (old) rt ... (mem)...(ory) (datatype)(data)
+    ;
+    # (end) (new) (old) rt ... (datatype) (data) (mem)...(ory) [target object location];
+    rol 3 -1;
+    dup;
+    rol 4 1;
+    # (old) (end) (new) (old) rt ... (datatype) (data) (mem)...(ory) [target object location];
+    rol 2 1;
+    dup;
+    rol 4 1;
+    # (end) (old) (new) (end) (old) rt ... (datatype) (data) (mem)...(ory) [target object location];
+    sub;
+    dup;
+    sub 2;
+    rol 3 1;
+    mul -1;
+    # (end-old) (new) (old-end-2) (end) (old) rt ... (datatype) (data) (mem)...(ory) [target object location];
+    rol 5 -1;
+    dup;
+    rol 6 1;
+    # (old) (end-old) (new) (old-end-2) (end) (old) rt ... (datatype) (data) (mem)...(ory) [target object location];
+    add 2;
+    psh 2;
+    # 2 (old+2) (end-old) (new) (old-end-2) (end) (old) rt ... (datatype) (data) (mem)...(ory) [target object location];
+    rol;
+    rol;
+    rol;
+    # (old) rt ... (mem)...(ory) (datatype)(data);
+
+    jump return;
+    :no change;
+    # pop 0 index, (new insert depth) and (end insert depth) and just return - memory doesn't need to be moved;
+    pop;
+    pop;
+    pop;
+    # (old insert depth) rt  ...'  (datatype) (data) (memory);
+    :return;
+
+    # '(gone) (gone) (old) rt ...' (memory);
+    sub 4;
+    rol 3 1;
+    # rt '(old) ...' (memory);
+}
+
+addNextLength{
+    # add length to get to next memory value;
+    # rt '(insert depth) ... ' (datatype) (data) (memory);
+    rol 3 -1;
+
+    # roll datatype up;
+    add 3;
+    dup;
+    psh -1;
+    rol;
+    # '(datatype) (insert depth) rt ...' (data) (memory);
+
+    dup;
+    jump not -1 not end;
+    # '-1 (insert depth) rt ... (previous object)' assumed end;
+    # return -1, psh 0, then insert to same depth;
+    rol 2 1;
+    dup;
+    rol 3 1;
+    psh 1;
+    rol;
+
+    psh 0;
+    rol 2 1;
+    dup;
+    rol 3 1;
+    psh 1;
+    rol;
+
+    # '(insert depth) rt ... (previous) 0' -1 assumed end;
+    jump merge length;
+
+    :not end;
+    dup;
+    jump not 0 not null;
+    # null case - no data so no length to add;
+    # return datatype;
+    rol 2 1;
+    dup;
+    rol 3 1;
+    psh 1;
+    rol;
+
+    jump merge length;
+
+    :not null;
+    dup;
+    jump equ 1 int/char;
+    dup;
+    jump equ 2 int/char;
+    dup;
+    jump equ 3 list;
+    # invalid datatype;
+    end;
+
+    :int/char;
+    # int/char case - 1 data value so +1;
+    # return datatype;
+    rol 2 1;
+    dup;
+    rol 3 1;
+    psh 1;
+    rol;
+
+    add 1;
+    jump merge length;
+
+    :list;
+    # list case;
+    # return datatype;
+    rol 2 1;
+    dup;
+    rol 3 1;
+    psh 1;
+    rol;
+    # '(insert depth) rt ... (datatype)' (subtype) (length) (el)(em)(en)(ts) (memory);
+    sizeOfList;
+    # '(insert depth) rt ... (datatype) (subtype) (length) (el)(em)(en)(ts)' (memory);
+
+    :merge length;
+    # '(insert depth) rt ... (datatype) (data)' (memory);
+    # stop reaching over rt, then return;
+    sub 2;
+    rol 3 1;
+}
+
+sizeOfList{
+    # rt '(insert depth) ... (datatype)' (subtype) (length) (el)(em)(en)(ts) (memory);
+    rol 3 -1;
+
+    # roll subtype up;
+    add 3;
+    dup;
+    psh -1;
+    rol;
+    # '(subtype) (insert depth) rt ... (datatype)' (length) (el)(em)(en)(ts) (memory);
+
+    dup;
+    jump equ 1 int/char list;
+    dup;
+    jump equ 2 int/char list;
+    dup;
+    jump equ 3 list of list;
+    # invalid datatype;
+    end;
+    :int/char list;
+    # elements must be 1 space each - length # of elements;
+    # return subtype;
+    rol 2 1;
+    dup;
+    rol 3 1;
+    psh 1;
+    rol;
+    # roll length up;
+    add 1;
+    dup;
+    psh -1;
+    rol;
+
+    # '(length) (insert depth) rt ... (datatype) (subtype)' (elements) (memory);
+    # get dup of length, then return to memory;
+    dup;
+    rol 3 -1;
+    add 1;
+    dup;
+    rol 3 1;
+    psh 1;
+    rol;
+    # '(insert depth) (length) rt ... (datatype) (subtype) (length)' (elements) (memory);
+    add;
+    sub 1;
+    # '(insert depth) rt ... (datatype) (subtype) (length) (elements)' (next datatype) (data) memory);
+    jump merge length;
+
+    :list of list;
+    # '(subtype) (insert depth) (index) rt (datatype)' (length) (datatype)(data) (datatype)(data) ... (memory);
+    # return subtype;
+    rol 2 1;
+    dup;
+    rol 3 1;
+    psh 1;
+    rol;
+    # roll length up;
+    add 1;
+    dup;
+    psh -1;
+    rol;
+    # '(length) (insert depth) rt ... (datatype) (subtype)' (datatype)(data) (datatype) (data) ... (memory);
+    # get dup of length, then return to memory;
+
+    dup;
+    rol 3 -1;
+    add 1;
+    dup;
+    rol 4 1;
+    psh 1;
+    rol;
+    # '(length) (insert depth) rt ... (datatype) (subtype) (length)' (subtype)(length)(elements) (subtype)(length)(elements) ... (memory);
+    dup;
+    jump equ 0 no elements;
+
+    :element loop;
+    # repeat length times:;
+    rol 2 1;
+    sizeOfList;
+    # '(insert depth) (length) rt ... (datatype) (subtype) (length) (subtype)(length)(elements)' (subtype)(length)(elements) ... (memory);
+    rol 2 1;
+    sub 1;
+    dup;
+    jump not 0 element loop;
+
+    :no elements;
+    # pop 0 length;
+    pop;
+    sub 1;
+    # '(insert depth) rt ... (datatype) (subtype) (length) (subtype)(length)(elements) (subtype)(length)(elements) ...' (memory);
+
+    :merge length;
+    # '(insert depth) rt ... (datatype) (subtype) (length) (elements)' (next datatype)(data) (memory);
+    sub 2;
+    rol 3 1;
+    #  rt '(insert depth)... (datatype) (subtype) (length) (elements)' (next datatype)(data) (memory);
+}

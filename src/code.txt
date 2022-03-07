@@ -1,0 +1,9 @@
+main{
+    psh 1;
+    jump les 1 b;
+    otC a;
+    end;
+    :b;
+    otC b;
+    end;
+}

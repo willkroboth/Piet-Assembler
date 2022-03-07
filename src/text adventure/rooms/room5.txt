@@ -1,0 +1,148 @@
+include ../main.txt;
+include ../../util/IO.txt;
+include room4.txt;
+
+main{
+    pshOrder 1 1 2 1 1 -1;#got stick and got key;
+    psh 0 0;
+    jump func: enter;
+}
+# Storage Room (5);
+enter{
+    pop;
+    pop;# don't care where we came from;
+
+    pshOrder \length
+     You  are  in  a  storage  room  with  a;
+    IO.printChar;
+
+    psh 3;
+    main.hasItem;
+    jump equ 0 full closet;
+        pshOrder \length n  empty;
+        IO.printChar;
+    :full closet;
+    pshOrder \length  closet;
+    IO.printChar;
+
+    psh 4;
+    main.hasItem;
+    jump equ 1 no bucket;
+        pshOrder \length  and  bucket  on  the  floor;
+        IO.printChar;
+    :no bucket;
+
+    pshOrder \length
+     .\n
+     Actions:\n
+     1.  Return  Right\n;
+    IO.printChar;
+    psh 1;# default 1 action;
+
+    rol 2 1;# rol depth up;
+    add 1;# reach over action count;
+
+    psh 3;
+    main.hasItem;
+    jump equ 1 has uniform;# don't include closet action if already has uniform;
+        rol 2 1;
+        add 1;#add to action count;
+        rol 2 1;
+        pshOrder \length 2.  Check  the  Closet\n;
+        IO.printChar;
+    :has uniform;
+
+    psh 4;
+    main.hasItem;
+    jump equ 1 has bucket;# don't include bucket action if already has the bucket;
+        rol 2 1;
+        add 1;
+        dup;
+        otN;# value of this action changes based on if previous action is included;
+        rol 2 1;
+        pshOrder \length .  Pick  up  the  bucket\n;
+        IO.printChar;
+    :has bucket;
+    sub 1;
+    rol 2 1;
+
+    psh 5;
+    rol 2 1;
+    main.getAction;
+    dup;
+    jump equ 1 func: room4.enter;
+    dup;
+    jump not 2 not 2;
+        # (action) (area) (depth);
+        rol 3 -1;
+        add 2;
+        psh 3;
+        main.hasItem;
+        # (branch) (depth) (action) (area);
+        rol 2 1;
+        sub 2;
+        rol 4 1;
+        # (branch) (action) (area) (depth);
+        jump equ 0 func: checkCloset;
+
+        rol 3 -1;
+        add 2;
+        psh 4;
+        main.hasItem;
+        rol 2 1;
+        sub 2;
+        rol 4 1;
+        jump equ 0 func: getBucket;
+        end;
+    :not 2;
+    dup;
+    jump equ 3 func: getBucket;
+
+    end;
+}
+
+checkCloset{
+    pop;
+    pop;
+
+    psh 3;
+    main.addItem;
+
+    pshOrder \length
+     You  find  a  guard's  uniform  in  the  closet  and  put  it  on\n
+     Actions:\n
+     1.  Go  Back\n;
+    IO.printChar;
+
+    psh 5;
+    psh 2;
+    psh 1;
+    main.getAction;
+
+    jump equ 1 func: enter;
+
+    end;
+}
+
+getBucket{
+    pop;
+    pop;
+
+    psh 4;
+    main.addItem;
+
+    pshOrder \length
+     You  pick  up  the  bucket\n
+     Actions:\n
+     1.  Go  Back\n;
+    IO.printChar;
+
+    psh 5;
+    psh 3;
+    psh 1;
+    main.getAction;
+
+    jump equ 1 func: enter;
+
+    end;
+}

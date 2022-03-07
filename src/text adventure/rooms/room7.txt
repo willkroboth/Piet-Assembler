@@ -1,0 +1,109 @@
+include ../main.txt;
+include ../../util/IO.txt;
+include room6.txt;
+
+main{
+    psh 0 0;
+    jump func: enter;
+}
+
+# hallway right #2;
+enter{
+    pop;
+    pop;# don't care where came from;
+
+    pshOrder \length
+     You  are  at  the  end  of  the  hallway.  There  is  a  large  door  in  front  of  you.\n
+     Actions:\n
+     1.  Return  left\n
+     2.  Inspect  the  door\n;
+    IO.printChar;
+
+
+    psh 7;
+    psh 2;
+    main.getAction;
+    dup;
+    jump equ 1 func: room6.enter;
+    dup;
+    jump equ 2 func: inspectDoor;
+}
+
+inspectDoor{
+    pop;
+    pop;#don't care where came from;
+
+    pshOrder \length
+     You  can  see  that  the  door  is  locked  from  the  outside  by  a  thick  bar  through  a  thin  gap.\n
+     Actions:\n
+     1.  Go  Back\n
+     2.  Use  the  Stick\n;# assume you have the stick;
+    IO.printChar;
+
+    # check for the fire poker (item 7);
+    psh 7;
+    main.hasItem;
+    psh 7;# room 7;
+    psh 2;# default 2 actions;
+
+    rol 3 -1;
+    jump equ 0 no poker;
+        pshOrder \length 3.  Use  the  Fire  Poker\n;
+        IO.printChar;
+        add 1;
+    :no poker;
+
+    main.getAction;
+    dup;
+    jump equ 1 func: enter;
+    dup;
+    jump equ 2 func: useStick;
+    dup;
+    jump equ 3 func: usePoker;
+
+    end;
+}
+
+useStick{
+    pop;
+    pop;
+    pshOrder \length
+     You  try  to  put  the  stick  through  the  gap  in  the  door frame  to  lift  the  locking  bar.\n
+     However,  the  stick  is  too  wide  to  fit  through.\n
+     Actions:\n
+     1.  Go  Back\n;
+    IO.printChar;
+
+    pshOrder 1 6;
+    main.getAction;
+    dup;
+    jump equ 1 func: inspectDoor;
+    end;
+}
+
+usePoker{
+    pop;
+    pop;
+
+    pshOrder \length
+     You  push  the  thin  end  of  the  poker  through  the  gap  in  the  door  frame  and  lift  the  locking  bar.\n
+     The  door  is  now  unlocked.\n
+     Actions:\n
+     1.  Exit\n;
+    IO.printChar;
+
+    psh 1;
+    main.getAction;
+
+    jump equ 1 func: endGame;
+    end;
+}
+
+endGame{
+    pshOrder \length
+     Congratulations!  You  have  escaped  the  dungeon!\n
+     Ending  game.\n;
+    IO.printChar;
+
+    end;
+}

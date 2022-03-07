@@ -1,0 +1,152 @@
+include ../main.txt;
+include ../../util/IO.txt;
+include room2.txt;
+include room3.txt;
+include room4.txt;
+
+main{
+    pshOrder \length
+     Welcome  to  Dungeon  Quest  -  A  Piet  Program!\n
+     You  are  stuck  in  a  medieval  prison.  Your  goal  is  to  escape  to  the  outside.\n;
+    IO.printChar;
+    jump func: main2;
+}
+
+main2{
+    pshOrder \length
+     You  can  quit  at  anytime  to  start  over   by  pressing  control  and  C  (^C).\n
+     You  play  the  game  by  choosing  options  from  a  list,  like  so:\n
+     Actions:\n
+     1.  Start  Game\n
+     2.  Quit\n;
+    IO.printChar;
+
+
+    psh 0;
+    psh 2;
+    main.getAction;
+    dup;
+    jump equ 1 func: enter;
+    dup;
+    jump equ 2 func: quit;
+
+    end;
+}
+
+quit{
+    pop;
+    pop;
+    pshOrder \length Goodbye!\n;
+    IO.printChar;
+    end;
+}
+
+enter{
+    pop;
+    pop;
+    pshOrder \length
+     You  are  in  a  dark  prison  cell.  There  is  a  wooden  bed  in  the  corner  and  water  dripping  from  the  ceiling.\n
+     Actions:\n;
+    IO.printChar;
+
+    psh 2;# is door unlocked?;
+    main.hasItem;
+    dup;
+    jump equ 1 go outside;
+        pshOrder \length
+         1.  Look  Outside\n;
+        IO.printChar;
+        jump next;
+    :go outside;
+        pshOrder \length
+         1.  Go  Outside\n;
+        IO.printChar;
+    :next;
+
+    pshOrder \length
+     2.  Check  the  Water\n
+     3.  Check  the  Bed\n;
+    IO.printChar;
+
+    psh 1;
+    psh 3;
+    main.getAction;
+    rol 3 -1;
+    jump equ 1 going outside;
+        dup;
+        jump equ 1 func: room2.enter;
+        jump rejoin;
+    :going outside;
+        dup;
+        jump equ 1 func: room4.enter;
+    :rejoin;
+    dup;
+    jump equ 2 func: room3.enter;
+    dup;
+    jump equ 3 func: checkBed;
+
+    end;
+}
+
+checkBed{
+    pop;
+    pop;
+    pshOrder \length
+     The  bed  is  made  of  hard  splintered  wood.\n;
+    IO.printChar;
+
+    psh 1;
+    main.hasItem;
+    jump equ 1 already has stick;
+
+    # add stick to items;
+    pshOrder \length
+     You  break  off  a  small  piece  and  put  it  in  your  pocket.\n;
+    IO.printChar;
+    psh 1;
+    main.addItem;
+
+    :already has stick;
+
+    pshOrder \length 1.  Go  Back\n;
+    IO.printChar;
+    psh 1;
+    main.getAction;
+    pop;
+
+    pshOrder 1 3;# tell enter function where it's coming from;
+    jump func: enter;
+}
+
+#
+1
+3
+1
+1
+2
+1
+2
+2
+1
+2
+1
+1
+1
+2
+2
+1
+1
+1
+3
+1
+3
+1
+2
+1
+1
+3
+2
+3
+1
+
+;

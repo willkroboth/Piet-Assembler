@@ -1,0 +1,67 @@
+include ../main.txt;
+include start.txt;
+include ../../util/IO.txt;
+
+main{
+    psh 0 0;
+    jump func: enter;
+}
+
+# Water inside the cell (start 2 - 1 ii);
+enter{
+    pop;
+    pop;
+    pshOrder \length
+     The  cold  water  leaks  in  through  a  small  hole  and  exits  through  another  crack  in  the  wall\n
+     Actions:\n
+     1.  Go  Back  to  the  Cell.\n;
+    IO.printChar;
+    psh 3;# room 3;
+    psh 1;
+
+    rol 3 -1;
+    add 2;
+    # check for bucket (item 4) - if you have it add this option;
+    psh 5;# don't fill bucket if it already is filled;
+    main.hasItem;
+    jump equ 1 no bucket;
+
+    psh 4;
+    main.hasItem;
+    jump equ 0 no bucket;
+        pshOrder \length 2.  Use  the  bucket\n;
+        IO.printChar;
+        rol 2 1;
+        add 1;
+        rol 2 1;
+    :no bucket;
+    sub 2;
+    rol 3 1;
+
+    main.getAction;
+    dup;
+    jump equ 1 func: start.enter;
+    dup;
+    jump equ 2 func: fillBucket;
+
+    end;
+}
+
+fillBucket{
+    pop;
+    pop;
+    pshOrder \length
+     Your  bucket  is  filled  with  water.\n
+     Actions:\n
+     1.  Go  Back\n;
+    IO.printChar;
+
+    psh 5;# filled bucket is Item 5;
+    main.addItem;
+
+    psh 1;
+    main.getAction;
+    pop;
+    pshOrder 3 2;
+    jump func: enter;
+}
